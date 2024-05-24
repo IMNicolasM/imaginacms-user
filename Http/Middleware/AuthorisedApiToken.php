@@ -5,7 +5,6 @@ namespace Modules\User\Http\Middleware;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Laravel\Passport\TokenRepository;
-use Lcobucci\JWT\Parser;
 use Modules\User\Contracts\Authentication;
 use Modules\User\Repositories\UserTokenRepository;
 
@@ -52,7 +51,6 @@ class AuthorisedApiToken
 
         if ($found === null) {
             // Imagina Patch: Add validation with passport token
-            //$id = (new Parser())->parse($this->parseToken($token))->getHeader('jti');
             $user = auth('api')->user(); //$this->passportToken->find($id);
             if ($user === null) {
                 return false;
