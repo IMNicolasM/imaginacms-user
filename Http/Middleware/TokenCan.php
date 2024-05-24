@@ -5,7 +5,8 @@ namespace Modules\User\Http\Middleware;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Laravel\Passport\TokenRepository;
-use Lcobucci\JWT\Parser;
+use Lcobucci\JWT\Encoding\JoseEncoder;
+use Lcobucci\JWT\Token\Parser;
 use Modules\User\Contracts\Authentication;
 use Modules\User\Entities\UserInterface;
 use Modules\User\Repositories\UserTokenRepository;
@@ -55,7 +56,7 @@ class TokenCan
 
         // imagina patch: add validate with passport token
         if ($token === null) {
-            $id = (new Parser())->parse($this->parseToken($token))->getHeader('jti');
+            $id = (new Parser(new JoseEncoder()))->parse($this->parseToken($token))->headers()->get('jti');
             $token = $this->passportToken->find($id);
             if ($token === null) {
                 return false;
