@@ -2,6 +2,7 @@
 
 namespace Modules\User\Tests;
 
+use Illuminate\Support\Str;
 use Modules\User\Repositories\RoleRepository;
 use Modules\User\Repositories\UserRepository;
 use Modules\User\Services\UserRegistration;
@@ -12,12 +13,13 @@ class UserRegistrationTest extends BaseUserTestCase
      * @var RoleRepository
      */
     private $role;
+
     /**
      * @var UserRepository
      */
     private $user;
 
-    public function setUp()
+    public function setUp(): void
     {
         parent::setUp();
         $this->role = app(RoleRepository::class);
@@ -45,7 +47,7 @@ class UserRegistrationTest extends BaseUserTestCase
     {
         return $this->role->create([
             'name' => $name,
-            'slug' => str_slug($name),
+            'slug' => Str::slug($name),
         ]);
     }
 }

@@ -2,12 +2,12 @@
 
 namespace Modules\User\Transformers;
 
-use Illuminate\Http\Resources\Json\Resource;
+use Illuminate\Http\Resources\Json\JsonResource;
 use Modules\User\Permissions\PermissionManager;
 
-class FullRoleTransformer extends Resource
+class FullRoleTransformer extends JsonResource
 {
-    public function toArray($request)
+    public function toArray($request): array
     {
         $permissionsManager = app(PermissionManager::class);
         $permissions = $this->buildPermissionList($permissionsManager->all());
@@ -41,7 +41,7 @@ class FullRoleTransformer extends Resource
         foreach ($permissionsConfig as $mainKey => $subPermissions) {
             foreach ($subPermissions as $key => $permissionGroup) {
                 foreach ($permissionGroup as $lastKey => $description) {
-                    $list[strtolower($key) . '.' . $lastKey] = current_permission_value_for_roles($this->resource, $key, $lastKey);
+                    $list[strtolower($key).'.'.$lastKey] = current_permission_value_for_roles($this->resource, $key, $lastKey);
                 }
             }
         }

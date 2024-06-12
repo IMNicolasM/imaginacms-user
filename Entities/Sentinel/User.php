@@ -8,22 +8,36 @@ use Cartalyst\Sentinel\Users\EloquentUser;
 use Illuminate\Auth\Authenticatable;
 use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Laracasts\Presenter\PresentableTrait;
+use Modules\Isite\Traits\Tokenable;
 use Modules\User\Entities\UserInterface;
 use Modules\User\Entities\UserToken;
 use Modules\User\Presenters\UserPresenter;
 use Laravel\Passport\HasApiTokens;
+use Stancl\Tenancy\Database\Concerns\BelongsToTenant;
+use Modules\Isite\Traits\RevisionableTrait;
+use Modules\Media\Support\Traits\MediaRelation;
+
+use Modules\Core\Support\Traits\AuditTrait;
 
 class User extends EloquentUser implements UserInterface, AuthenticatableContract
 {
-    use PresentableTrait, Authenticatable, HasApiTokens;
+  use PresentableTrait, Authenticatable, HasApiTokens, AuditTrait, RevisionableTrait, Tokenable, MediaRelation;
 
-    protected $fillable = [
-        'email',
-        'password',
-        'permissions',
-        'first_name',
-        'last_name',
-    ];
+  public $repository = 'Modules\User\Repositories\UserRepository';
+  public $entity = 'Modules\User\Entities\Sentinel\User';
+
+  protected $fillable = [
+    'email',
+    'password',
+    'permissions',
+    'first_name',
+    'last_name',
+    'timezone',
+    'language',
+    'is_guest',
+    'user_name',
+    'phone'
+  ];
 
     /**
      * {@inheritDoc}
@@ -34,14 +48,17 @@ class User extends EloquentUser implements UserInterface, AuthenticatableContrac
 
     public function __construct(array $attributes = [])
     {
-        $this->loginNames = config('asgard.user.config.login-columns');
-        $this->fillable = config('asgard.user.config.fillable');
+        $this->loginNames = setting('iprofile::customLogin', null, config('asgard.user.config.login-columns'));
+
+        if (! is_array($this->loginNames)) {
+            $this->loginNames = json_decode($this->loginNames);
+        }
         if (config()->has('asgard.user.config.presenter')) {
             $this->presenter = config('asgard.user.config.presenter', UserPresenter::class);
         }
-        if (config()->has('asgard.user.config.dates')) {
-            $this->dates = config('asgard.user.config.dates', []);
-        }
+//        if (config()->has('asgard.user.config.dates')) {
+//            $this->dates = config('asgard.user.config.dates', []);
+//        }
         if (config()->has('asgard.user.config.casts')) {
             $this->casts = config('asgard.user.config.casts', []);
         }
@@ -50,7 +67,7 @@ class User extends EloquentUser implements UserInterface, AuthenticatableContrac
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function hasRoleId($roleId)
     {
@@ -58,7 +75,7 @@ class User extends EloquentUser implements UserInterface, AuthenticatableContrac
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function hasRoleSlug($slug)
     {
@@ -66,7 +83,7 @@ class User extends EloquentUser implements UserInterface, AuthenticatableContrac
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function hasRoleName($name)
     {
@@ -74,27 +91,24 @@ class User extends EloquentUser implements UserInterface, AuthenticatableContrac
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function isActivated()
     {
-        if (Activation::completed($this)) {
+        if (is_int($this->getKey()) && Activation::completed($this)) {
             return true;
         }
 
         return false;
     }
 
-    /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
-     */
     public function api_keys()
     {
-        return $this->hasMany(UserToken::class);
+      return $this->hasMany(UserToken::class);
     }
-
+    
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function getFirstApiKey()
     {
@@ -107,12 +121,44 @@ class User extends EloquentUser implements UserInterface, AuthenticatableContrac
         return $userToken->access_token;
     }
 
+    public function organizations()
+    {
+        return $this->belongsToMany(
+            \Modules\Isite\Entities\Organization::class,
+            'isite__user_organization');
+    }
+
+    public function addresses()
+    {
+        return $this->hasMany(
+            \Modules\Iprofile\Entities\Address::class);
+    }
+
+    public function fields()
+    {
+        return $this->hasMany(
+            \Modules\Iprofile\Entities\Field::class);
+    }
+
+    public function settings()
+    {
+        return $this->hasMany(
+            \Modules\Iprofile\Entities\Setting::class, 'related_id')->where('entity_name', 'user');
+    }
+
+    public function departments()
+    {
+        return $this->belongsToMany(
+            \Modules\Iprofile\Entities\Department::class,
+            'iprofile__user_department');
+    }
+
     public function __call($method, $parameters)
     {
-        #i: Convert array to dot notation
+        //i: Convert array to dot notation
         $config = implode('.', ['asgard.user.config.relations', $method]);
 
-        #i: Relation method resolver
+        //i: Relation method resolver
         if (config()->has($config)) {
             $function = config()->get($config);
             $bound = $function->bindTo($this);
@@ -120,12 +166,13 @@ class User extends EloquentUser implements UserInterface, AuthenticatableContrac
             return $bound();
         }
 
-        #i: No relation found, return the call to parent (Eloquent) to handle it.
+        //i: No relation found, return the call to parent (Eloquent) to handle it.
         return parent::__call($method, $parameters);
     }
+    
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function hasAccess($permission)
     {

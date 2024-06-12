@@ -10,7 +10,6 @@ class Sentinel implements LaravelGuard
 {
     /**
      * Determine if the current user is authenticated.
-     * @return bool
      */
     public function check()
     {
@@ -23,7 +22,6 @@ class Sentinel implements LaravelGuard
 
     /**
      * Determine if the current user is a guest.
-     * @return bool
      */
     public function guest()
     {
@@ -32,7 +30,6 @@ class Sentinel implements LaravelGuard
 
     /**
      * Get the currently authenticated user.
-     * @return \Illuminate\Contracts\Auth\Authenticatable|null
      */
     public function user()
     {
@@ -41,7 +38,6 @@ class Sentinel implements LaravelGuard
 
     /**
      * Get the ID for the currently authenticated user.
-     * @return int|null
      */
     public function id()
     {
@@ -54,18 +50,24 @@ class Sentinel implements LaravelGuard
 
     /**
      * Validate a user's credentials.
-     * @param  array $credentials
-     * @return bool
      */
     public function validate(array $credentials = [])
     {
         return SentinelFacade::validForCreation($credentials);
     }
 
+  /**
+   * Determine if the guard has a user instance.
+   *
+   * @return bool
+   */
+  public function hasUser()
+  {
+    return SentinelFacade::hasUser();
+  }
+
     /**
      * Set the current user.
-     * @param  \Illuminate\Contracts\Auth\Authenticatable $user
-     * @return bool
      */
     public function setUser(Authenticatable $user)
     {
@@ -74,37 +76,23 @@ class Sentinel implements LaravelGuard
 
     /**
      * Alias to set the current user.
-     * @param  \Illuminate\Contracts\Auth\Authenticatable $user
-     * @return bool
      */
     public function login(Authenticatable $user)
     {
         return $this->setUser($user);
     }
 
-    /**
-     * @param array $credentials
-     * @param bool $remember
-     * @return bool
-     */
-    public function attempt(array $credentials, $remember = false)
+    public function attempt(array $credentials, bool $remember = false)
     {
         return SentinelFacade::authenticate($credentials, $remember);
     }
 
-    /**
-     * @return bool
-     */
     public function logout()
     {
         return SentinelFacade::logout();
     }
 
-    /**
-     * @param int $userId
-     * @return bool
-     */
-    public function loginUsingId($userId)
+    public function loginUsingId(int $userId)
     {
         $user = app(\Modules\User\Repositories\UserRepository::class)->find($userId);
 

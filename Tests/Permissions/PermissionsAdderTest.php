@@ -13,12 +13,13 @@ final class PermissionsAdderTest extends BaseUserTestCase
      * @var RoleRepository
      */
     private $role;
+
     /**
      * @var UserRepository
      */
     private $user;
 
-    public function setUp()
+    public function setUp(): void
     {
         parent::setUp();
         $this->role = app(RoleRepository::class);
@@ -34,7 +35,7 @@ final class PermissionsAdderTest extends BaseUserTestCase
         $this->user->create([
             'email' => 'n.widart@gmail.com',
             'password' => 'demo1234',
-            'permissions' => ['dashboard.index' => true,],
+            'permissions' => ['dashboard.index' => true],
         ]);
         $this->app->config->set('asgard.user.permissions', [
             'user.users' => [

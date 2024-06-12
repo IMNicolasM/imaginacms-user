@@ -3,6 +3,7 @@
 namespace Modules\User\Tests;
 
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Str;
 use Modules\User\Entities\Sentinel\User;
 use Modules\User\Events\UserHasRegistered;
 use Modules\User\Events\UserIsCreating;
@@ -19,12 +20,13 @@ class SentinelUserRepositoryTest extends BaseUserTestCase
      * @var RoleRepository
      */
     private $role;
+
     /**
      * @var UserRepository
      */
     private $user;
 
-    public function setUp()
+    public function setUp(): void
     {
         parent::setUp();
         $this->role = app(RoleRepository::class);
@@ -104,7 +106,7 @@ class SentinelUserRepositoryTest extends BaseUserTestCase
         ]);
 
         Event::assertDispatched(UserIsCreating::class, function ($e) {
-            return $e->getOriginal('email')=== 'n.widart@gmail.com';
+            return $e->getOriginal('email') === 'n.widart@gmail.com';
         });
     }
 
@@ -388,7 +390,7 @@ class SentinelUserRepositoryTest extends BaseUserTestCase
     {
         return $this->role->create([
             'name' => $name,
-            'slug' => str_slug($name),
+            'slug' => Str::slug($name),
         ]);
     }
 }
